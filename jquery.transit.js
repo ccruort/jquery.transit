@@ -215,6 +215,7 @@
   registerCssHook('skewY');
   registerCssHook('x', true);
   registerCssHook('y', true);
+  registerCssHook('translate3D');
 
   // ## Transform class
   // This is the main class of a transformation property that powers
@@ -342,6 +343,21 @@
         this.set('translate', null, y);
       },
 
+// add translate 3D
+// $(this).transition({translate3D:'0, 0, -4200'}, 1500);
+
+      translate3D: function(x, y, z) {
+        if (this._translateX === undefined) { this._translateX = 0; }
+        if (this._translateY === undefined) { this._translateY = 0; }
+        if (this._translateZ === undefined) { this._translateZ = 0; }
+
+        if (x !== null && x !== undefined) { this._translateX = x + 'px'; }
+        if (y !== null && y !== undefined) { this._translateY = y + 'px'; }
+        if (z !== null && z !== undefined) { this._translateZ = z + 'px'; }
+
+        this.translate3D = this._translateX + "," + this._translateY+ "," + this._translateZ;
+      },
+
       // ### translate
       // Notice how this keeps the other value.
       //
@@ -365,6 +381,10 @@
 
       y: function() {
         return this._translateY || 0;
+      },
+      
+      z: function() {
+        return this._translateZ || 0;
       },
 
       scale: function() {
@@ -515,21 +535,10 @@
     var delay = 0;
     var queue = true;
 
-    var theseProperties = jQuery.extend(true, {}, properties);
-
     // Account for `.transition(properties, callback)`.
     if (typeof duration === 'function') {
       callback = duration;
       duration = undefined;
-    }
-
-    // Account for `.transition(properties, options)`.
-    if (typeof duration === 'object') {
-      easing = duration.easing;
-      delay = duration.delay || 0;
-      queue = duration.queue || true;
-      callback = duration.complete;
-      duration = duration.duration;
     }
 
     // Account for `.transition(properties, duration, callback)`.
@@ -539,29 +548,29 @@
     }
 
     // Alternate syntax.
-    if (typeof theseProperties.easing !== 'undefined') {
-      easing = theseProperties.easing;
-      delete theseProperties.easing;
+    if (typeof properties.easing !== 'undefined') {
+      easing = properties.easing;
+      delete properties.easing;
     }
 
-    if (typeof theseProperties.duration !== 'undefined') {
-      duration = theseProperties.duration;
-      delete theseProperties.duration;
+    if (typeof properties.duration !== 'undefined') {
+      duration = properties.duration;
+      delete properties.duration;
     }
 
-    if (typeof theseProperties.complete !== 'undefined') {
-      callback = theseProperties.complete;
-      delete theseProperties.complete;
+    if (typeof properties.complete !== 'undefined') {
+      callback = properties.complete;
+      delete properties.complete;
     }
 
-    if (typeof theseProperties.queue !== 'undefined') {
-      queue = theseProperties.queue;
-      delete theseProperties.queue;
+    if (typeof properties.queue !== 'undefined') {
+      queue = properties.queue;
+      delete properties.queue;
     }
 
-    if (typeof theseProperties.delay !== 'undefined') {
-      delay = theseProperties.delay;
-      delete theseProperties.delay;
+    if (typeof properties.delay !== 'undefined') {
+      delay = properties.delay;
+      delete properties.delay;
     }
 
     // Set defaults. (`400` duration, `ease` easing)
@@ -571,7 +580,7 @@
     duration = toMS(duration);
 
     // Build the `transition` property.
-    var transitionValue = getTransition(theseProperties, duration, easing, delay);
+    var transitionValue = getTransition(properties, duration, easing, delay);
 
     // Compute delay until callback.
     // If this becomes 0, don't bother setting the transition property.
@@ -581,7 +590,7 @@
     // If there's nothing to do...
     if (i === 0) {
       var fn = function(next) {
-        self.css(theseProperties);
+        self.css(properties);
         if (callback) { callback.apply(self); }
         if (next) { next(); }
       };
@@ -689,16 +698,14 @@
   // ### toMS(duration)
   // Converts given `duration` to a millisecond string.
   //
-  // toMS('fast') => $.fx.speeds[i] => "200ms"
-  // toMS('normal') //=> $.fx.speeds._default => "400ms"
-  // toMS(10) //=> '10ms'
-  // toMS('100ms') //=> '100ms'  
+  //     toMS('fast')   //=> '400ms'
+  //     toMS(10)       //=> '10ms'
   //
   function toMS(duration) {
     var i = duration;
 
-    // Allow string durations like 'fast' and 'slow', without overriding numeric values.
-    if (typeof i === 'string' && (!i.match(/^[\-0-9\.]+/))) { i = $.fx.speeds[i] || $.fx.speeds._default; }
+    // Allow for string durations like 'fast'.
+    if ($.fx.speeds[i]) { i = $.fx.speeds[i]; }
 
     return unit(i, 'ms');
   }
